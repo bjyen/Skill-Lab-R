@@ -1,0 +1,95 @@
+---
+title: "Skill Lab R_PS4"
+author: "Bing-Jie Yen"
+date: "February 16, 2017"
+output: pdf_document
+---
+\section{Question 1}
+ Use the code in the Session 4 script to reshape and table the tobacco retail
+    policy scores by year, then plot the three barplots. Change the barplots to plot horizontally, using the horiz option, and change the number of columns and rows in the graphical parameters to recreate the plot below.
+
+
+
+
+
+       
+```{r}
+score<-read.csv('F:/Dropbox/2017 Spring/Skill Lab  R/Data/stateRPAS_MPH5962.csv') #State retail tobacco policy scores
+
+
+score2 <- reshape(score, varying=3:5, idvar="State", times=12:14, sep="",direction="long", drop="abbr")
+score2$time <- score2$time +2000
+head(score2)
+library(ggplot2)
+library(car)
+score2$RPAS <- recode(score2$RPAS, recodes=
+                        " 0:5='0-5';
+                      6:10='6-10';
+                      11:15='11-15';
+                      16:20= '16-20';
+                      21:25='21-25';
+                      26:30='26-30';
+                      31:33='31-33'
+                      ", as.factor.result=T)
+
+
+score2$time<-as.factor(score2$time)
+
+ggplot(data=score2, aes(x=time, y=RPAS, fill=time)) +
+  geom_bar(colour="black",stat="identity") +
+  guides(fill=FALSE)+coord_flip()
+
+
+       
+
+```
+\section{Question 1a}
+1a. There are a few improvements from the plot above to the one below. Recreate the plot below. Remove the for loop and simply plot each of the three barplots individually.
+```{r}
+
+par(mfrow=c(1,3))
+#2012
+data2012 <- subset(score2, subset = time == 2012)
+data2012$RPAS<-as.factor(data2012$RPAS)
+plot(data2012$RPAS,horiz=TRUE,main="2012 Retail policy activity scores",col="green")
+
+#2014
+data2014 <- subset(score2, subset = time == 2014)
+data2014$RPAS<-as.factor(data2014$RPAS)
+plot(data2014$RPAS,horiz=TRUE,main="2014 Retail policy activity scores",col="blue")
+
+#2015
+data2015 <- subset(score2, subset = time == 2015)
+data2015$RPAS<-as.factor(data2015$RPAS)
+plot(data2015$RPAS,horiz=TRUE,main="2015 Retail policy activity scores",col="red")
+
+```
+\section{Question 2}
+Use the plot function to create a scatterplot of the 2012 and 2015 tobacco retail
+policy scores. Use the formula con???guration for plot (see help for plot.formula)
+making the 2015 scores the "y" or dependent variable. Remember to change the
+graphical parameters to accommodate only one plot. Change the x and y labels
+from the variables to something more informative. Give the plot a title. Bonus:
+change the points to solid circles or triangles, and change the color of the points.
+```{r}
+Q2<-ggplot(score, aes(score$RPAS12,score$RPAS15))
+
+Q2+geom_point(shape=1) +    
+  geom_smooth()   +
+  xlab("2012 tobacco retail policy scores")+
+  ylab("2015 tobacco retail policy scores")
+
+```
+\section{Question 3}
+The boxplot command works just like the barplot command. Using the
+County Health data, round the food environment index values to whole num- bers and create a boxplot of the distribution of the freeLunch variable for each
+rounded value of the food environment index. Color the boxes and/or median
+bars, label the axes and place an overall title. Since we often use the percent
+of students eligible for free lunches as an indicator of economic prosperity of
+```{r}
+County <- read.csv('F:/Dropbox/2017 Spring/Skill Lab  R/Data/CountyHealth.csv')
+County$roundedfei<-round(County$fei)
+Q3<-ggplot(County, aes(factor(roundedfei), freeLunch))+  geom_boxplot(fill = "grey80", colour = "#3366FF")
+Q3
+
+```

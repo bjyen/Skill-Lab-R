@@ -1,0 +1,137 @@
+---
+title: "Skill Lab R - Problem 3"
+author: "Bing-Jie Yen"
+date: "February 9, 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r cars}
+data.label<-read.csv('F:/Dropbox/2017 Spring/Skill Lab  R/Data/CountyHealthVariableLabels.csv')
+
+data<-read.csv('F:/Dropbox/2017 Spring/Skill Lab  R/Data/CountyHealth.csv')
+data<-data.frame(data)
+names(data)
+```
+ 1. Perform a t-test of difference-in-means on the rate of dentists per popula-
+ tion in Virginia (FIPS=51) and Kentucky (FIPS=21). Is there a statistically
+ significant difference in the averages?
+
+ ANS: the t test (3.5198, p<0.001) shows that the difference in means is not equal to 0
+ 
+```{r}
+t.test(x=data[data$state== 51 ,11], y=data[data$state == 21,11])
+
+```
+2. From the full dataset, regress the rate of premature age-adjusted mortality
+    on rates of adult diabetes, smoking, access to exercise, and limited healthy     food  options. Which predictors are statistically signifficant?
+
+ ANS: all the predictors are statistically significant by simple linear regression with OLS method
+
+```{r}
+infMort<-data.frame(data$infMort)
+diabAdult<-data.frame(data$diabAdult)
+smokAdult<-data.frame(data$smokAdult)
+accExer<-data.frame(data$accExer)
+fei<-data.frame(data$fei)
+
+Q2<-lm(infMort~diabAdult+smokAdult+accExer+fei,data=data)
+summary(Q2)
+```
+3. Generate the predicted rates of premature age-adjusted mortality from your
+    model. What is the average (mean) predicted value?
+    calculate percent correctly predicted
+ 
+```{r}
+Q3<- data.frame(Q2$model$infMort, round(predict(Q2, type="response")))
+names(Q3)<- c("obs", "pred")
+#with(Q3, table(obs, pred))
+summary(Q3)   
+#with(Q3, table(obs, pred))/sum(table(Q3))
+Q3accuracy<-100*sum(diag(with(Q3, table(obs, pred))/sum(table(Q3)))) 
+```
+
+4. Use the 'resid' function to generate the errors from your model. (HINT: The
+  'resid' function works just like the 'predict' function.) Plot a histogram of the errors. Is the OLS assumption of a normal distribution of errors with a mean of zero met or is it violated?
+  
+```{r}
+library(MASS)
+Q4 <- studres(Q2) 
+hist(Q4, freq=FALSE, 
+     main="Distribution of Studentized Residuals")
+xfit<-seq(min(Q4),max(Q4),length=40) 
+yfit<-dnorm(xfit) 
+lines(xfit, yfit)
+```
+
+5. Check the predictors in your model for multicollinearity. Which two predic-
+  tors are most correlated, and what is the correlation coefficient?
+
+ANS: with Variance inflation factor, diabAdult and smokAdult have highest variance inflation factors 
+      
+```{r}
+library(car)
+vif(Q2)  
+cor(data$diabAdult,data$smokAdult,  use = "complete.obs")
+```
+
+6. Check the model for heteroskedasticity. Is the assumption of homoskedasticity
+    met?
+ANS: using Breush Pagan Test, the bptest shows that the model violates the assumption of homoskedasticity 
+
+```{r}
+library(lmtest)
+bptest(Q2)
+```
+7. You are interested in which counties might have ine???cient health care sys-
+  tems. You know that (price-adjusted) Medicare reimbursements paid per en-
+  rollee are considered an indicator of a system's efficiency. You operationalize
+  "inefficiency" in a county's health care system as a county's rate of these reimbursements being above the mean for counties. Create a binary variable of these reimbursements by county. Use this variable in the questions below.
+  
+```{r}
+# Create the paMedReim mean 
+paMedReim<-data.frame(data$paMedReim)
+summary(paMedReim)   # Mean   : 9322  
+data$inefficiency<-ifelse(paMedReim>9322,1,0)
+inefficiency<-data.frame(data$inefficiency)
+table(inefficiency) 
+  
+```
+
+8. Execute a logistic regression model on the new variable. Include the      following regressors: primary care physicians per population, the food environment index, and smoking rates. Summarize the model.
+
+
+```{r}
+pcpRate<-data.frame(data$pcpRate)
+Q8 <-glm(inefficiency ~ pcpRate+fei+smokAdult, family=binomial, data=data)
+summary(Q8)
+```
+
+9. Find the odds ratios for the statistically signi???cant e???ects in the model (not the intercept).
+
+ ANS: pcpRate and smokAdult are statistically significant and
+ the odds ratio: pcpRate     0.99211743; smokAdult   1.19089448
+ 
+ 
+```{r}
+exp(cbind(OR = coef(Q8), confint(Q8)))
+
+```
+
+10. Calculate the percent of counties correctly predicted from your model.
+ ANS: 65.45515  percent of counties are correctly predicted from the glm model Q8
+ 
+ 
+```{r}
+Q10<- data.frame(Q8$model$inefficiency, round(predict(Q8, type="response")))
+names(Q10)<- c("obs", "pred")
+with(Q10, table(obs, pred))
+
+with(Q10, table(obs, pred))/sum(table(Q10))
+Q10accuracy<-100*sum(diag(with(Q10, table(obs, pred))/sum(table(Q10))))
+Q10accuracy 
+```
